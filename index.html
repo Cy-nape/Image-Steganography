@@ -1,0 +1,108 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steganography Web App</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <!-- Add Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-shield-alt"></i> Image Steganography</h1>
+        
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="encode">Encode</button>
+            <button class="tab-btn" data-tab="decode">Decode</button>
+        </div>
+
+        <!-- Encode Section -->
+        <section id="encoding-section" class="tab-content active">
+            <div class="card">
+                <h2><i class="fas fa-lock"></i> Encode Message</h2>
+                <form id="encode-form" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="image">
+                            <i class="fas fa-image"></i> Select Image:
+                        </label>
+                        <div class="file-input-container">
+                            <input type="file" id="image" name="image" accept="image/*" required>
+                            <div class="file-preview"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">
+                            <i class="fas fa-envelope"></i> Message to Encode:
+                        </label>
+                        <textarea id="message" name="message" 
+                                placeholder="Enter your message here..." 
+                                required></textarea>
+                        <div class="character-count">
+                            Characters: <span id="char-count">0</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-lock"></i> Encode Message
+                    </button>
+                </form>
+
+                <div id="download-link" class="result-section">
+                    <h3><i class="fas fa-download"></i> Download Encoded Image</h3>
+                    <a id="encoded-download" href="#" class="btn-secondary" download>
+                        Download Image
+                    </a>
+                </div>
+
+                <div id="encoding-loader" class="loader">
+                    <div class="spinner"></div>
+                    <p>Encoding message...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Decode Section -->
+        <section id="decoding-section" class="tab-content">
+            <div class="card">
+                <h2><i class="fas fa-unlock"></i> Decode Message</h2>
+                <form id="decode-form" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="decode-image">
+                            <i class="fas fa-image"></i> Select Encoded Image:
+                        </label>
+                        <div class="file-input-container">
+                            <input type="file" id="decode-image" name="decode-image" 
+                                   accept="image/*" required>
+                            <div class="file-preview"></div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-unlock"></i> Decode Message
+                    </button>
+                </form>
+
+                <div id="decoded-message" class="result-section">
+                    <h3><i class="fas fa-envelope-open"></i> Decoded Message:</h3>
+                    <div class="message-box">
+                        <p id="message-output"></p>
+                        <button id="copy-message" class="btn-secondary">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+                </div>
+
+                <div id="decoding-loader" class="loader">
+                    <div class="spinner"></div>
+                    <p>Decoding message...</p>
+                </div>
+            </div>
+        </section>
+    </div>
+    <script src="/static/scripts.js"></script>
+</body>
+</html>
