@@ -6,12 +6,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def encode_message(image_path, message):
+def encode_message(image_path, message, output_path='encoded_image.png'):
     """
     Complete encoding process: Huffman -> Spread Spectrum -> LSB
     Args:
         image_path: Path to input image
         message: Message to encode
+        output_path: Path to save the encoded image
     Returns:
         Tuple of (encoded image path, huffman instance, message_length)
     """
@@ -28,7 +29,7 @@ def encode_message(image_path, message):
         # Step 3: LSB encoding
         # Encode the length of the message first, then the actual message
         message_length = len(spread_message)
-        encoded_image_path = lsb_encode(image_path, spread_message, message_length)
+        encoded_image_path = lsb_encode(image_path, spread_message, message_length, output_path)
         logger.info("LSB encoding completed")
 
         return encoded_image_path, huffman

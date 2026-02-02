@@ -28,12 +28,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
         input.addEventListener('change', function(e) {
             preview.innerHTML = '';
+            preview.classList.remove('active'); // Reset animation
             const file = e.target.files[0];
             
             if (file && file.type.startsWith('image/')) {
                 const img = document.createElement('img');
                 img.src = URL.createObjectURL(file);
                 preview.appendChild(img);
+                // Small timeout to allow browser to register the removal of class for re-animation
+                setTimeout(() => {
+                    preview.classList.add('active');
+                }, 10);
             }
         });
     }

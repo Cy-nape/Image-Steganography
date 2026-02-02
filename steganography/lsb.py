@@ -15,7 +15,7 @@ def set_lsb(value, bit):
         logger.error(f"Error setting LSB: {str(e)}")
         raise
 
-def lsb_encode(image_path, binary_message, message_length):
+def lsb_encode(image_path, binary_message, message_length, output_path='encoded_image.png'):
     """Encode binary message into image using LSB steganography"""
     try:
         if not os.path.exists(image_path):
@@ -47,7 +47,6 @@ def lsb_encode(image_path, binary_message, message_length):
         # Reshape and save
         img_array = flat_image.reshape(img_array.shape)
         encoded_image = Image.fromarray(img_array)
-        output_path = 'encoded_image.png'
         encoded_image.save(output_path, 'PNG')
 
         logger.info(f"Message encoded successfully in image: {output_path}")
