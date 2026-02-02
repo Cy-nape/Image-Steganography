@@ -1,7 +1,7 @@
 # Image Steganography Project 
 
 **Yo what's up guys! Welcome to my Image Steganography Project.**  
-Yeh mera college ka project hai, and honestly, scene bohot crazy hai. Basically, hum images ke andar secret messages chupayenge, like actual spy stuff! 😎
+Yeh mera college ka project hai, and honestly, scene bohot crazy hai. Basically, hum images ke andar secret messages chupayenge, like actual spy stuff!
 
 Agar tum bhi "Freshie" ho aur soch rahe ho ki "Bhai yeh kya chal raha hai?", tension mat lo. Main sab kuch explain karunga, ekdum simple language mein. No heavy jargon, just pure logic aur thoda sa "jugaad".
 
@@ -46,7 +46,7 @@ Computer mein yeh numbers binary (0s and 1s) mein hote hain. Example: `10010110`
 
 ---
 
-## 🛠️ The Tech Stack (Humne kya use kiya?)
+## The Tech Stack (Humne kya use kiya?)
 
 *   **Python:** Kyunki Python hai toh mumkin hai.
 *   **Flask:** Website banane ke liye backend framework.
