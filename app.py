@@ -17,7 +17,8 @@ app.secret_key = os.urandom(24)
 # Value: HuffmanCoding object
 HUFFMAN_STORE = {}
 
-UPLOAD_FOLDER = 'image'
+import tempfile
+UPLOAD_FOLDER = tempfile.gettempdir()
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def get_file_hash(file_path):
