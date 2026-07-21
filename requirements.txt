@@ -1,0 +1,8 @@
+flask
+numpy
+pillow
+Flask-SQLAlchemy
+Flask-Migrate
+bcrypt
+PyJWT
+Flask-Limiter
