@@ -112,6 +112,25 @@ The test suite covers:
 
 ---
 
+## Running Tests
+
+The test suite requires `pytest`, which is a development dependency not included in `requirements.txt`. To run the tests on a fresh clone:
+
+```bash
+# 1. Set up virtual environment and install dependencies
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# 2. Install pytest
+pip install pytest
+
+# 3. Run the test suite
+python -m pytest tests/ -v
+```
+
+---
+
 ## Project History
 
 The project originally included a **spread-spectrum obfuscation layer** (`spread_spectrum.py`) as a second line of defence after Huffman compression. The implementation XOR-spread message bits across the pixel array using a pseudorandom sequence seeded with a fixed integer (`random.seed(42)`).
