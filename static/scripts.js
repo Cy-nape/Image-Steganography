@@ -15,6 +15,21 @@ document.addEventListener("DOMContentLoaded", function () {
         };
     }
 
+    window.togglePassphrase = function(formType) {
+        if (formType === 'encode') {
+            const pipeline = document.getElementById('pipeline').value;
+            const passphraseGroup = document.getElementById('encode-passphrase-group');
+            const passphraseInput = document.getElementById('encode-passphrase');
+            if (pipeline === 'secure') {
+                passphraseGroup.style.display = 'block';
+                passphraseInput.required = true;
+            } else {
+                passphraseGroup.style.display = 'none';
+                passphraseInput.required = false;
+            }
+        }
+    };
+
     // Load initial data
     loadApiKeys();
 
@@ -96,6 +111,12 @@ document.addEventListener("DOMContentLoaded", function () {
             const formData = new FormData();
             formData.append("image", document.getElementById("image").files[0]);
             formData.append("message", document.getElementById("message").value);
+            
+            const pipelineValue = document.getElementById("pipeline").value;
+            formData.append("pipeline", pipelineValue);
+            if (pipelineValue === 'secure') {
+                formData.append("passphrase", document.getElementById("encode-passphrase").value);
+            }
 
             // We must remove Content-Type from getAuthHeaders because fetch automatically 
             // sets it with the correct boundary for multipart/form-data when passing FormData.
@@ -131,6 +152,10 @@ document.addEventListener("DOMContentLoaded", function () {
         e.preventDefault();
         const formData = new FormData();
         formData.append("image", document.getElementById("decode-image").files[0]);
+        const decPassphrase = document.getElementById("decode-passphrase").value;
+        if (decPassphrase) {
+            formData.append("passphrase", decPassphrase);
+        }
     
         try {
             const headers = getAuthHeaders();

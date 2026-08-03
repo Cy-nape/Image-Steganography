@@ -3,8 +3,9 @@ venv/
 __pycache__/
 *.pyc
 .DS_Store
-image/
 instance/
 *.db
 .pytest_cache/
 .env
+steganography/cache/
+.ipynb_checkpoints/

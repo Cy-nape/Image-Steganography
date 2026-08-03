@@ -3,6 +3,9 @@ import os
 import logging
 import uuid
 import hashlib
+import io
+from PIL import Image
+from steganography.crypto import DecryptionError
 from steganography.utils import encode_message, decode_message
 from extensions import db, migrate, limiter
 from steganography.huffman import HuffmanCoding
@@ -15,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder='template', static_folder='static')
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-12345')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///app.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -51,55 +54,76 @@ def login():
 @multi_auth_required
 def encode():
     temp_input = None
-    temp_output = None
     try:
         if 'image' not in request.files or 'message' not in request.form:
             return jsonify({'error': 'Missing image or message'}), 400
         
         image = request.files['image']
         message = request.form['message']
+        pipeline = request.form.get('pipeline', 'secure')
+        passphrase = request.form.get('passphrase')
         
         if image.filename == '':
             return jsonify({'error': 'No selected file'}), 400
             
+        # Validate extension
+        allowed_extensions = {'.png', '.jpg', '.jpeg', '.bmp'}
+        ext = os.path.splitext(image.filename)[1].lower()
+        if ext not in allowed_extensions:
+            return jsonify({'error': 'Invalid file extension'}), 400
+            
         # Create unique filenames
         unique_id = str(uuid.uuid4())
         temp_input = os.path.join(UPLOAD_FOLDER, f"input_{unique_id}.png")
-        temp_output = os.path.join(UPLOAD_FOLDER, f"encoded_{unique_id}.png")
         
         # Save input image
         image.save(temp_input)
         
-        # Encode message
-        encoded_path, huffman = encode_message(temp_input, message, output_path=temp_output)
+        # Verify image using PIL
+        try:
+            with Image.open(temp_input) as img:
+                img.verify()
+        except Exception:
+            return jsonify({'error': 'Invalid image file'}), 400
         
-        # Calculate hash of the encoded image and store huffman tree in DB
-        file_hash = get_file_hash(encoded_path)
+        # Encode message to an in-memory buffer
+        output_buffer = io.BytesIO()
+        _, huffman = encode_message(
+            temp_input, 
+            message, 
+            output_path=output_buffer, 
+            pipeline=pipeline, 
+            passphrase=passphrase
+        )
+        
+        # Calculate hash of the encoded image buffer
+        output_buffer.seek(0)
+        file_hash = hashlib.sha256(output_buffer.read()).hexdigest()
+        output_buffer.seek(0)
+        
+        # Store huffman tree in DB
         new_job = models.EncodeJob(
             user_id=g.user.id,
             file_hash=file_hash,
-            huffman_dict=huffman.huffman_dict
+            huffman_dict=huffman.huffman_dict,
+            pipeline=pipeline
         )
         db.session.add(new_job)
         db.session.commit()
         logger.info(f"Stored Huffman tree for hash: {file_hash} by user: {g.user.id}")
         
-        return send_file(encoded_path, as_attachment=True, download_name='encoded_image.png')
+        return send_file(output_buffer, as_attachment=True, download_name='encoded_image.png', mimetype='image/png')
 
+    except ValueError as e:
+        logger.error(f"Encoding error: {str(e)}")
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
         logger.error(f"Encoding error: {str(e)}")
         return jsonify({'error': str(e)}), 500
         
     finally:
-        # Cleanup input file, keep output file until sent? 
-        # send_file might need it. Flask handles file handle but we manually delete?
-        # send_file with as_attachment=True opens the file. We shouldn't delete immediately.
-        # But we can assume Flask serves it quickly. 
-        # For simplicity in this fix, we will leave the files in 'image' folder or clean up inputs.
         if temp_input and os.path.exists(temp_input):
             os.remove(temp_input)
-        # We perform lazy cleanup of output files or rely on OS/user to clean image folder
-        # Actually, let's not delete output file immediately as send_file needs it.
 
 @app.route('/decode', methods=['POST'])
 @multi_auth_required
@@ -110,12 +134,27 @@ def decode():
             return jsonify({'error': 'Missing image'}), 400
             
         image = request.files['image']
+        passphrase = request.form.get('passphrase')
+        
         if image.filename == '':
             return jsonify({'error': 'No selected file'}), 400
+            
+        # Validate extension
+        allowed_extensions = {'.png', '.jpg', '.jpeg', '.bmp'}
+        ext = os.path.splitext(image.filename)[1].lower()
+        if ext not in allowed_extensions:
+            return jsonify({'error': 'Invalid file extension'}), 400
             
         unique_id = str(uuid.uuid4())
         temp_input = os.path.join(UPLOAD_FOLDER, f"decode_{unique_id}.png")
         image.save(temp_input)
+        
+        # Verify image
+        try:
+            with Image.open(temp_input) as img:
+                img.verify()
+        except Exception:
+            return jsonify({'error': 'Invalid image file'}), 400
         
         # Calculate hash to find matching Huffman tree
         file_hash = get_file_hash(temp_input)
@@ -128,10 +167,16 @@ def decode():
         huffman = HuffmanCoding()
         huffman.huffman_dict = job.huffman_dict
         
-        decoded_message = decode_message(temp_input, huffman)
+        decoded_message = decode_message(temp_input, huffman, passphrase=passphrase)
         
         return jsonify({'message': decoded_message})
 
+    except DecryptionError as e:
+        logger.error(f"Decryption error: {str(e)}")
+        return jsonify({'error': str(e)}), 400
+    except ValueError as e:
+        logger.error(f"Value error: {str(e)}")
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
         logger.error(f"Decoding error: {str(e)}")
         return jsonify({'error': str(e)}), 500

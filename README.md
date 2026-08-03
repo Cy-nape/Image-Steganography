@@ -1,106 +1,128 @@
-# Image Steganography Project 
+# Image Steganography Project
 
-**Yo what's up guys! Welcome to my Image Steganography Project.**  
-Yeh mera college ka project hai, and honestly, scene bohot crazy hai. Basically, hum images ke andar secret messages chupayenge, like actual spy stuff!
-
-Agar tum bhi "Freshie" ho aur soch rahe ho ki "Bhai yeh kya chal raha hai?", tension mat lo. Main sab kuch explain karunga, ekdum simple language mein. No heavy jargon, just pure logic aur thoda sa "jugaad".
+A Flask-based Image Steganography API demonstrating applied cryptography, secure API design, and full-stack engineering. Secret messages are hidden inside images using a layered security pipeline combining Huffman compression, AES-256-GCM encryption, and LSB bit embedding.
 
 ---
 
 ## What is Steganography?
 
-Socho tume apne best friend ko ek secret message bhejna hai, but teacher aas-paas hain. Tum kya karoge?  
-Tum us message ko kisi aisi cheez mein chupa doge jo ekdum normal dikhe via.  
-
-**Steganography** wahi hai!
-It is the art of hiding data within data. Humara message (text) ek innocent-looking image ke andar chupa hota hai.  
-*Kisi ko pata bhi nahi chalega ki photo ke peeche raaz chupa hai!* 
+Steganography is the art of hiding data *within* data. A secret message (text) is embedded inside an innocent-looking image — invisible to the naked eye and undetectable without the correct passphrase and decoding key.
 
 ---
 
-## The Concepts (Thoda Technical, but Easy)
+## Security Architecture (Three Layers)
 
-Humne is project mein 3 main techniques use ki hain taaki security next level ho jaye via. Samjho kaise:
+### 1. Huffman Coding — Compression
+The message is compressed before embedding. Characters that appear frequently get short binary codes; rare characters get longer ones. This minimises the number of LSB pixels that need to be modified, reducing the visual footprint in the carrier image.
 
-### 1. Huffman Coding (Making it SMOL)
-Sabse pehle, humare message ko compress karna padta hai.  
-Imagine karo tumhara message ek bada sa suitcase hai. Huffman coding usko vacuum seal karke ek chote se pouch mein convert kar deta hai.
-*   **Why?** Kyunki image ke paas limited space hoti hai. Jitna chota message, utna easy hiding.
-*   **How?** Jo letters baar-baar aate hain (like 'a', 'e'), unko chota code milta hai. Jo kam aate hain (like 'z'), unko bada. *Smart stuff, right?*
+### 2. AES-256-GCM Encryption (Secure Pipeline)
+When the secure pipeline is selected, the compressed message is encrypted using **AES-256-GCM** (Authenticated Encryption with Associated Data):
+- A fresh 16-byte **salt** and 12-byte **nonce** are generated via `os.urandom()` for every encode call — guaranteeing ciphertext uniqueness even for identical inputs.
+- The passphrase is stretched into a 256-bit AES key using **PBKDF2-HMAC-SHA256 with 100,000 iterations**, making brute-force attacks computationally expensive.
+- The GCM authentication tag detects any tampering: a single flipped bit in the image causes decryption to raise a `DecryptionError`.
 
-### 2. Spread Spectrum (Faila Do!)
-Ab chupaana hai, toh ek jagah mat rakho.  
-Spread Spectrum technique humare message ke bits ko randomly poori image mein faila (spread) deta hai.
-*   **Vibe:** Jaise bread pe jam spread karte hain, waise hi hum bits spread karte hain.
-*   **Fayda:** Agar koi hacker image ka ek part dekhega, toh use kuch samajh nahi aayega. Sab kuch scattered hai!
+### 3. LSB (Least Significant Bit) Embedding
+Every pixel has Red, Green, and Blue channels — each an 8-bit integer (0–255). Changing only the least significant bit causes a colour shift of ±1, imperceptible to human vision. The binary payload (flag + length header + message) is embedded into the LSBs of the flattened pixel array:
 
-### 3. LSB (Least Significant Bit) (The Real Magic)
-Yeh sabse important part hai. Dhyan se suno!
-Har image pixels se banti hai (Red, Green, Blue). Har pixel ki ek numeric value hoti hai (0-255).
-Computer mein yeh numbers binary (0s and 1s) mein hote hain. Example: `10010110`.
-
-*   **LSB (Last Wala Bit):** Jo last digit hai (Rightmost), usko agar hum change kar dein, toh color mein itna minor difference aata hai ki human eye pakad hi nahi sakti.
-*   **Hack:** Hum apne secret message ke bits ko image ke pixels ke LSB mein daal dete hain.
-    *   Original: `1001011`**`0`** (Dark Red)
-    *   Modified: `1001011`**`1`** (Still Dark Red, but ab isme humara data hai!)
+```
+Original:  1001011[0]  (Dark Red, value 150)
+Modified:  1001011[1]  (Still Dark Red, value 151 — but now carries a secret bit)
+```
 
 ---
 
-## The Tech Stack (Humne kya use kiya?)
+## Tech Stack
 
-*   **Python:** Kyunki Python hai toh mumkin hai.
-*   **Flask:** Website banane ke liye backend framework.
-*   **HTML/CSS/JS:** Frontend chamkane ke liye. (Humne glassmorphism use kiya hai, looks premium bro!)
-*   **NumPy:** Numbers ke saath khelne ke liye (Matrix calculations for images).
-*   **Pillow (PIL):** Image processing ke liye.
-
----
-
-## How to Run This? (Chalao kaise?)
-
-Follow these steps mere bhai:
-
-1.  **Terminal kholo** (woh black screen hacker wali).
-2.  **Project folder mein jao**.
-3.  **Virtual Environment banao** (Taaki system mess up na ho):
-    ```bash
-    python3 -m venv venv
-    ```
-4.  **Activate karo**:
-    ```bash
-    source venv/bin/activate  # Mac/Linux
-    # ya phir Windows ke liye: venv\Scripts\activate
-    ```
-5.  **Dependencies install karo**:
-    ```bash
-    pip install -r requirements.txt
-    ```
-6.  **Server Start karo**:
-    ```bash
-    python app.py
-    ```
-7.  **Browser mein jao**: Open `http://127.0.0.1:5000`.
-
-Website load ho jayegi.
-Encode tab mein jao, image dalo, message likho, aur magic dekho!
+| Layer | Technology |
+|---|---|
+| Backend | Python / Flask |
+| Cryptography | `cryptography` (AES-GCM, PBKDF2) |
+| Image Processing | Pillow (PIL), NumPy |
+| Database | SQLite / PostgreSQL via SQLAlchemy |
+| Migrations | Flask-Migrate (Alembic) |
+| Authentication | JWT Bearer tokens + hashed API Keys |
+| Rate Limiting | Flask-Limiter |
+| Frontend | HTML / CSS / Vanilla JS (glassmorphism UI) |
 
 ---
 
-## Important Note (Updates!)
-The project now uses a full SQLite/PostgreSQL database to store users, API keys, and Huffman dictionaries (`encode_jobs`), so decoded images survive server restarts!
+## API Security Design
+
+### Dual-Auth System
+The `/encode` and `/decode` routes are protected by `@multi_auth_required`, which accepts **either**:
+- **JWT Bearer token** — issued at login, for web sessions. Verified with `HS256` against the server's `SECRET_KEY`.
+- **API Key** — a `secrets.token_hex(32)` key, stored only as a SHA-256 hash in the database. The raw key is shown once on creation. Supports soft-delete revocation (`is_active=False`).
+
+### Huffman Dictionary Storage
+Because the Huffman codebook is required for decoding, it is stored as JSON in the `encode_jobs` table, keyed by the **SHA-256 hash** of the output encoded image. This survives server restarts and ties the decoding key to the exact pixel state of the image.
+
+### File Upload Hardening
+1. Extension allowlist: `{.png, .jpg, .jpeg, .bmp}`
+2. PIL `verify()` after saving — detects executables renamed to `.png`.
+3. Encoded output is written to an in-memory `io.BytesIO()` buffer — **zero disk artefacts** from encoded images.
+4. Temporary input files are deleted in a `finally:` block even on exceptions.
 
 ---
 
-## 📊 Data Analysis Portfolio Extension
+## How to Run
 
-This project has been extended to demonstrate core **Data Analyst** skills, including data generation, SQL analytics, and visualization using Pandas/Jupyter.
+```bash
+# 1. Create and activate virtual environment
+python3 -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
-### Components Added:
-1. **`generate_dataset.py`**: A Python script that encodes a folder of sample images with different message lengths using two algorithms (`LSB (Huffman Compressed)` and `Spread Spectrum (Huffman Compressed)`). It calculates exact execution times, PSNR (visual distortion), and compression ratios, saving the results to a CSV and the database. **Note:** The data generated by this script (`experiment_runs` table) comes from *real, actual executions* of the steganography algorithms.
-2. **`seed_users.py`**: A script that generates 10,000 *synthetic* users and 50,000 *synthetic* encoding jobs over a 12-month period to simulate a real-world production database with realistic growth trends.
-3. **`analytics_queries.sql`**: A set of complex SQL queries demonstrating window functions (e.g., MoM growth), CTEs, and JOINs against the synthetic database to answer product/business questions.
-4. **`analysis.ipynb`**: A Jupyter Notebook that uses `pandas`, `matplotlib`, and `seaborn` to clean the experimental data and visualize algorithmic trade-offs (Processing time vs. Image size, PSNR vs. Message length).
+# 2. Install dependencies
+pip install -r requirements.txt
 
-**Important Distinction for Reviewers:**
-- The `experiment_runs` table and `results.csv` contain **REAL data** derived from executing the Python steganography algorithms.
-- The data in `users`, `api_keys`, and `encode_jobs` where `is_synthetic = True` is **SIMULATED data** created purely to demonstrate advanced SQL analytics capabilities.
+# 3. Initialise the database
+flask db upgrade
+
+# 4. Start the server
+python app.py
+```
+
+Open `http://127.0.0.1:5000` in your browser. Register an account, then use the **Encode** tab to embed a secret message into an image, and the **Decode** tab to recover it.
+
+---
+
+## Running Tests
+
+```bash
+pytest tests/ -v
+```
+
+The test suite covers:
+- AES-GCM encrypt/decrypt round-trips
+- Wrong passphrase and tampered ciphertext rejection
+- Full encode → decode workflow via both JWT and API Key auth
+- Basic and Secure pipeline end-to-end
+- User isolation (User B cannot access User A's keys or jobs)
+- API key revocation and subsequent rejection
+- RGBA image handling (alpha channel stripping)
+
+---
+
+## Known Limitations
+
+- **Stateless Decoding:** The Huffman dictionary is stored locally keyed by the output image's SHA-256 hash. An encoded image cannot be decoded on a different server instance, or after the image is re-compressed (which changes its hash).
+- **Format Fragility:** LSB steganography is extremely fragile. Uploading a stego-image to WhatsApp, Twitter, or any service that re-encodes images with lossy compression will destroy the payload entirely.
+- **Capacity Constraint:** Exactly 1 bit per colour channel pixel is available. Capacity = `(width × height × 3) - 40` bits (the 40-bit header overhead for pipeline flag + message length).
+- **RGBA Images:** All images are converted to RGB before embedding. Any existing alpha channel (transparency) is stripped in the output PNG.
+- **Synchronous DoS Risk:** Image processing is synchronous. Very large images could tie up worker threads; the existing Flask-Limiter rate limiting partially mitigates this.
+
+---
+
+## Project History
+
+The project originally included a **spread-spectrum obfuscation layer** (`spread_spectrum.py`) as a second line of defence after Huffman compression. The implementation XOR-spread message bits across the pixel array using a pseudorandom sequence seeded with a fixed integer (`random.seed(42)`).
+
+After a security review, this approach was identified as **cryptographically weak**:
+- The fixed seed made the XOR sequence fully deterministic and reproducible by any attacker who read the source code.
+- XOR with a known sequence provides zero confidentiality — it is security-by-obscurity, not encryption.
+
+The spread-spectrum layer was **replaced with AES-256-GCM authenticated encryption** (`steganography/crypto.py`), which provides:
+- **Confidentiality** via a fresh random salt + nonce per encoding operation.
+- **Integrity and authenticity** via GCM's authentication tag — any bit-flip in the stego-image is detected on decode.
+- **Key hardening** via PBKDF2-HMAC-SHA256 with 100,000 iterations, making brute-force attacks computationally expensive.
+
+The old `spread_spectrum.py` file has been removed. Its migration out of the codebase is documented here so the design decision is not lost.

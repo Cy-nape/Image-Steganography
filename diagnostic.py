@@ -3,7 +3,6 @@ import os
 import random
 import string
 from PIL import Image
-import numpy as np
 
 # Import project modules
 from steganography.huffman import HuffmanCoding
@@ -56,14 +55,14 @@ def test_latency():
     for name, text in texts.items():
         # Encode
         start_enc = time.time()
-        _, huff = encode_message(img_path, text, output_path=out_path)
+        _, huff = encode_message(img_path, text, output_path=out_path, pipeline='basic')
         end_enc = time.time()
         enc_time = (end_enc - start_enc) * 1000
         encode_times.append(enc_time)
         
         # Decode
         start_dec = time.time()
-        decode_message(out_path, huff)
+        decode_message(out_path, huff, passphrase=None)
         end_dec = time.time()
         dec_time = (end_dec - start_dec) * 1000
         decode_times.append(dec_time)
@@ -79,17 +78,15 @@ def test_latency():
 
 def test_scale():
     print("\n--- 3. Scale/Capacity ---")
-    print("Codebase inspection in steganography/lsb.py reveals: `if len(binary_message) > img_array.size:`")
+    print("Codebase inspection in steganography/lsb.py reveals: `if len(binary_message) + 40 > img_array.size:`")
     print("This means the max capacity is 1 bit per value in the image array (which includes all channels RGB).")
     
     img_sizes = [(100, 100), (500, 500), (1920, 1080)]
     
     for w, h in img_sizes:
         capacity_bits = w * h * 3 # RGB channels
-        capacity_bytes = capacity_bits / 8
-        capacity_chars = capacity_bytes # rough ASCII equiv
-        # We also need to subtract 32 bits for the length header
-        actual_capacity_bits = capacity_bits - 32
+        # We also need to subtract 40 bits for the flag + length header
+        actual_capacity_bits = capacity_bits - 40
         
         # We get an average of ~4.5 bits per char after Huffman. So:
         approx_max_chars = actual_capacity_bits / 4.5

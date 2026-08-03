@@ -1,6 +1,6 @@
 # huffman.py
 import heapq
-from collections import defaultdict, Counter
+from collections import Counter
 import logging
 
 class HuffmanCoding:
